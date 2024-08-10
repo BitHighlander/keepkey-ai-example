@@ -4,7 +4,12 @@
  */
 import { useState, useEffect } from "react";
 import { PROMPTS_SYSTEM, TOOLS } from "./chart";
-import ollama from "ollama/browser";
+// @ts-ignore
+import { Ollama } from "keepkey-ollama/browser";
+const ollama = new Ollama({
+  host: "http://127.0.0.1:1646/ollama",
+  apiKey: "1fa0c776-eaa9-499d-a2e5-f76af6073912",
+});
 import { EXAMPLE_WALLET } from "./functions/keepkey";
 const TAG = " | inference | ";
 
@@ -43,7 +48,7 @@ export const useInferenceChat = (sdk, initialModel = "llama3.1") => {
       console.log(tag, "messagesInit: ", messagesInit);
       // let messages = PROMPTS_SYSTEM;
 
-      const response = await ollama.chat({ model, messages: messagesInit });
+      const response = await ollama.chat({ model, messages: messagesInit, tools:[] });
       console.log(tag, "response: ", response);
       console.log(tag, "content: ", response.message.content);
       if (response.message.content)
