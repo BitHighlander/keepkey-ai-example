@@ -2,18 +2,17 @@ import { useState, useEffect, useMemo } from "react";
 import { PROMPTS_SYSTEM, TOOLS } from "./chart";
 // @ts-ignore
 import { Ollama } from "keepkey-ollama/browser";
-
 import { EXAMPLE_WALLET } from "./functions/keepkey";
 
 const TAG = " | inference | ";
 
-export const useInferenceChat = (sdk, apiKey, initialModel = "llama3.1") => {
+export const useInferenceChat = (sdk, apiKey, initialModel = "sam4096/qwen2tools:0.5b") => {
   const [model, setModel] = useState(initialModel);
   const [messages, setMessages] = useState<any>([]);
   const [conversation, setConversation] = useState<any>([]);
   const [input, setInput] = useState("");
   const [selectedComponent, setSelectedComponent] =
-    useState<string>("portfolio");
+      useState<string>("portfolio");
 
   const ollama = useMemo(() => {
     console.log("API Key:", apiKey); // Debugging statement
@@ -93,48 +92,55 @@ export const useInferenceChat = (sdk, apiKey, initialModel = "llama3.1") => {
         { role: "user", content: message },
       ];
       setMessages(newMessages);
+
       const response = await ollama.chat({
-        model: model,
+        model,
         messages: newMessages,
         tools: TOOLS,
       });
+
       console.log(tag, "response: ", response);
-      const result = response.message;
-      const isFunction = result.function_call;
-      if (!isFunction) {
-        setConversation([...conversation, result]);
-        return;
+      const result = response?.message || {};
+
+      if (result?.content) {
+        setConversation((prev: any) => [...prev, result]);
       }
 
-      const functionCall = result.message.function_call;
-      const functionName = functionCall.name;
-      const functionArguments = JSON.parse(functionCall.arguments);
+      const isFunction = result?.tool_calls;
 
-      if (availableFunctions[functionName]) {
-        const functionResponse = await availableFunctions[functionName](
-          functionArguments
-        );
-        newMessages.push({
-          role: "system",
-          content: `The response for ${functionName} is ${functionResponse} with arguments ${JSON.stringify(
-            functionArguments
-          )}`,
-        });
-        newMessages.push({
-          role: "system",
-          content: `You are a summary agent. The system made tool calls. You are to put together a response that understands the user's intent, interprets the information returned from the tools, then summarizes for the user. If you are more than 80% sure the answer is logical, tell the user this. Otherwise, apologize for failing and return the logic of why you think the response is wrong.`,
-        });
+      if (isFunction && isFunction.length > 0) {
+        const functionCall = isFunction[0];
+        const functionName = functionCall?.function?.name;
 
-        const finalResponse = await ollama.chat({
-          model,
-          messages: newMessages,
-          tools: TOOLS,
-        });
-        console.log(tag, "finalResponse: ", finalResponse);
-        console.log(tag, "content: ", finalResponse.message.content);
-        setConversation([...conversation, finalResponse.message.content]);
-      } else {
-        console.log(`Function ${functionName} not found.`);
+        if (availableFunctions[functionName]) {
+          const functionResponse = await availableFunctions[functionName](
+            functionCall.function.arguments
+          );
+
+          const toolResponseMessage = {
+            role: "tool",
+            content: `The response for ${functionName} is ${functionResponse}`,
+          };
+
+          newMessages.push(toolResponseMessage);
+          newMessages.push({
+            role: "system",
+            content: `You are a summary agent. The system made tool calls. You are to put together a response that understands the user's intent, interprets the information returned from the tools, then summarizes for the user. If you are more than 80% sure the answer is logical, tell the user this. Otherwise, apologize for failing and return the logic of why you think the response is wrong.`,
+          });
+
+          const finalResponse = await ollama.chat({
+            model,
+            messages: newMessages,
+            tools: TOOLS,
+          });
+
+          setConversation((prev: any) => [
+            ...prev,
+            finalResponse.message,
+          ]);
+        } else {
+          console.log(`Function ${functionName} not found.`);
+        }
       }
     } catch (e) {
       console.error(tag, e);
