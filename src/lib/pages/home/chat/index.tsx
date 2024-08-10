@@ -11,7 +11,7 @@ import {
 } from "@chakra-ui/react";
 import { useInferenceChat } from "./inference";
 
-export function Chat({sdk}: any) {
+export function Chat({sdk, apiKey}: any) {
   const {
     conversation,
     input,
@@ -19,7 +19,7 @@ export function Chat({sdk}: any) {
     submitMessage,
     getModels,
     selectedComponent,
-  } = useInferenceChat(sdk);
+  } = useInferenceChat(sdk, apiKey);
   const [models, setModels] = useState<{ model: string }[]>([]);
   const [loading, setLoading] = useState(false);
 

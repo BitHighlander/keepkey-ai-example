@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 
 const Home = () => {
   const [sdk, setSdk] = useState(null);
+  const [apiKey, setApiKey] = useState(null);
   const [keepkeyConnected, setKeepKeyConnected] = useState(false);
 
   const onStart = async function () {
@@ -31,7 +32,7 @@ const Home = () => {
       const sdk = await KeepKeySdk.create(config);
       if (config.apiKey !== apiKey)
         localStorage.setItem("apiKey", config.apiKey);
-
+      setApiKey(config.apiKey);
       const featuresKK = await sdk.system.info.getFeatures();
       // eslint-disable-next-line no-console
       console.log("features: ", featuresKK);
@@ -57,7 +58,7 @@ const Home = () => {
     <Grid gap={4}>
       {keepkeyConnected ? (
         <div>
-          <Chat sdk={sdk}></Chat>
+          <Chat sdk={sdk} apiKey={apiKey}></Chat>
         </div>
       ) : (
         <div>not Connected</div>
