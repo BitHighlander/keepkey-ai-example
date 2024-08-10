@@ -32,12 +32,60 @@ export const useInferenceChat = (sdk, apiKey, initialModel = "mistral") => {
     }
   };
 
+  const isModelAvailable = async function (model: any) {
+    const models = await getModels();
+    return models.includes(model);
+  };
+
+  // const downloadModel = async function (model) {
+  //   console.log(`Downloading model: ${model}...`);
+  //   let currentDigestDone = false;
+  //
+  //   // Use ollama.pull to download the model with streaming
+  //   const stream = await ollama.pull({ model: model, stream: true });
+  //
+  //   // Loop through the stream to track progress
+  //   for await (const part of stream) {
+  //     if (part.digest) {
+  //       let percent = 0;
+  //       if (part.completed && part.total) {
+  //         percent = Math.round((part.completed / part.total) * 100);
+  //       }
+  //       process.stdout.clearLine(0); // Clear the current line
+  //       process.stdout.cursorTo(0); // Move cursor to the beginning of the line
+  //       process.stdout.write(`${part.status} ${percent}%...`); // Write the new text
+  //       if (percent === 100 && !currentDigestDone) {
+  //         console.log(); // Output to a new line
+  //         currentDigestDone = true;
+  //       } else {
+  //         currentDigestDone = false;
+  //       }
+  //     } else {
+  //       console.log(part.status);
+  //     }
+  //   }
+  //
+  //   console.log(`Model ${model} downloaded successfully.`);
+  // };
+
   const onStart = async () => {
     const tag = TAG + " | onStart | ";
     try {
       const featuresKK = await sdk.system.info.getFeatures();
       console.log("features: ", featuresKK);
 
+      //make sure model is available
+      // const available = await isModelAvailable(model);
+      //
+      // if (!available) {
+      //   console.log(`Model ${model} is not available. Downloading...`);
+      //   await downloadModel(model);
+      // } else {
+      //   console.log(`Model ${model} is already available.`);
+      // }
+
+
+      //
       const version = `${featuresKK.major_version}.${featuresKK.minor_version}.${featuresKK.patch_version}`;
       const summary = `Tell the user they are connected to their KeepKey. Only return the version: ${version}.`;
 
@@ -49,7 +97,6 @@ export const useInferenceChat = (sdk, apiKey, initialModel = "mistral") => {
           content: "KeepKey details: " + JSON.stringify(featuresKK),
         },
       ];
-
       console.log(tag, "messagesInit: ", messagesInit);
 
       const response = await ollama.chat({
