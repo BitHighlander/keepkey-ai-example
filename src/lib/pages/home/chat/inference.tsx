@@ -6,7 +6,7 @@ import { EXAMPLE_WALLET } from "./functions/keepkey";
 
 const TAG = " | inference | ";
 
-export const useInferenceChat = (sdk, apiKey, initialModel = "sam4096/qwen2tools:0.5b") => {
+export const useInferenceChat = (sdk, apiKey, initialModel = "mistral") => {
   const [model, setModel] = useState(initialModel);
   const [messages, setMessages] = useState<any>([]);
   const [conversation, setConversation] = useState<any>([]);
