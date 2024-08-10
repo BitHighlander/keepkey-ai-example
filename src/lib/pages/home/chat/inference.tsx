@@ -6,18 +6,24 @@ import { EXAMPLE_WALLET } from "./functions/keepkey";
 
 const TAG = " | inference | ";
 
+const MODELS_KNOWN = [
+  "mistral:latest", //Recomended for tools
+  "llama3.1:latest",
+];
+
 export const useInferenceChat = (sdk, apiKey, initialModel = "mistral") => {
   const [model, setModel] = useState(initialModel);
+  const [isDownloading, setIsDownloading] = useState(true);
+  const [percent, setPercent] = useState(0);
   const [messages, setMessages] = useState<any>([]);
   const [conversation, setConversation] = useState<any>([]);
   const [input, setInput] = useState("");
   const [selectedComponent, setSelectedComponent] =
-      useState<string>("portfolio");
+    useState<string>("portfolio");
 
   const ollama = useMemo(() => {
     console.log("API Key:", apiKey); // Debugging statement
     return new Ollama({
-      host: "http://127.0.0.1:1646/ollama",
       apiKey,
     });
   }, [apiKey]);
@@ -32,85 +38,103 @@ export const useInferenceChat = (sdk, apiKey, initialModel = "mistral") => {
     }
   };
 
-  const isModelAvailable = async function (model: any) {
-    const models = await getModels();
-    return models.includes(model);
+  const isModelAvailable = async function (model: string) {
+    try {
+      const modelsList = await getModels();
+      console.log("modelsList: ", modelsList);
+
+      // Ensure that modelsList.models is an array before attempting to access it
+      const models = modelsList?.models ?? [];
+
+      // Check if the provided model string matches the model property in any object
+      return models.some(
+        (modelObj: { model: string }) => modelObj.model === model
+      );
+    } catch (error) {
+      console.error("Error checking model availability:", error);
+      return false;
+    }
   };
 
-  // const downloadModel = async function (model) {
-  //   console.log(`Downloading model: ${model}...`);
-  //   let currentDigestDone = false;
-  //
-  //   // Use ollama.pull to download the model with streaming
-  //   const stream = await ollama.pull({ model: model, stream: true });
-  //
-  //   // Loop through the stream to track progress
-  //   for await (const part of stream) {
-  //     if (part.digest) {
-  //       let percent = 0;
-  //       if (part.completed && part.total) {
-  //         percent = Math.round((part.completed / part.total) * 100);
-  //       }
-  //       process.stdout.clearLine(0); // Clear the current line
-  //       process.stdout.cursorTo(0); // Move cursor to the beginning of the line
-  //       process.stdout.write(`${part.status} ${percent}%...`); // Write the new text
-  //       if (percent === 100 && !currentDigestDone) {
-  //         console.log(); // Output to a new line
-  //         currentDigestDone = true;
-  //       } else {
-  //         currentDigestDone = false;
-  //       }
-  //     } else {
-  //       console.log(part.status);
-  //     }
-  //   }
-  //
-  //   console.log(`Model ${model} downloaded successfully.`);
-  // };
+  const downloadModel = async function (model:string ) {
+    console.log(`Downloading model: ${model}...`);
+    setIsDownloading(true);
+    let currentDigestDone = false;
+
+    // Use ollama.pull to download the model with streaming
+    const stream = await ollama.pull({ model: model, stream: true });
+
+    // Loop through the stream to track progress
+    for await (const part of stream) {
+      if (part.digest) {
+        let percent = 0;
+        if (part.completed && part.total) {
+          percent = Math.round((part.completed / part.total) * 100);
+        }
+        console.log("percent: ", percent);
+        setPercent(percent);
+        if (percent === 100 && !currentDigestDone) {
+          currentDigestDone = true;
+        } else {
+          currentDigestDone = false;
+        }
+      } else {
+        console.log(part.status);
+      }
+    }
+
+    console.log(`Model ${model} downloaded successfully.`);
+  };
 
   const onStart = async () => {
     const tag = TAG + " | onStart | ";
     try {
       const featuresKK = await sdk.system.info.getFeatures();
       console.log("features: ", featuresKK);
+      if (!featuresKK) throw Error("Failed to connect to keepkey!");
+
+      const prefurredModel = MODELS_KNOWN[0];
+      //make sure model is available
 
       //make sure model is available
-      // const available = await isModelAvailable(model);
-      //
-      // if (!available) {
-      //   console.log(`Model ${model} is not available. Downloading...`);
-      //   await downloadModel(model);
-      // } else {
-      //   console.log(`Model ${model} is already available.`);
-      // }
+      const available = await isModelAvailable(prefurredModel);
+      console.log("available: ", available);
 
-
-      //
-      const version = `${featuresKK.major_version}.${featuresKK.minor_version}.${featuresKK.patch_version}`;
-      const summary = `Tell the user they are connected to their KeepKey. Only return the version: ${version}.`;
-
-      const messagesInit = [
-        ...PROMPTS_SYSTEM,
-        { role: "user", content: summary },
-        {
-          role: "user",
-          content: "KeepKey details: " + JSON.stringify(featuresKK),
-        },
-      ];
-      console.log(tag, "messagesInit: ", messagesInit);
-
-      const response = await ollama.chat({
-        model,
-        messages: messagesInit,
-        tools: [],
-      });
-
-      if (response.message?.content) {
-        setConversation((prev: any) => [...prev, response.message]);
+      if (!available) {
+        console.log(`Model ${prefurredModel} is not available. Downloading...`);
+        await downloadModel(prefurredModel);
+      } else {
+        console.log(`Model ${model} is already available.`);
+        setModel(prefurredModel);
+        setIsDownloading(false);
       }
 
-      console.log(tag, "response: ", response);
-      console.log(tag, "content: ", response.message?.content);
+      //
+      // const version = `${featuresKK.major_version}.${featuresKK.minor_version}.${featuresKK.patch_version}`;
+      // const summary = `Tell the user they are connected to their KeepKey. Only return the version: ${version}.`;
+      //
+      // const messagesInit = [
+      //   ...PROMPTS_SYSTEM,
+      //   { role: "user", content: summary },
+      //   {
+      //     role: "user",
+      //     content: "KeepKey details: " + JSON.stringify(featuresKK),
+      //   },
+      // ];
+      // console.log(tag, "messagesInit: ", messagesInit);
+      //
+      // const response = await ollama.chat({
+      //   model,
+      //   messages: messagesInit,
+      //   tools: [],
+      // });
+      //
+      // if (response.message?.content) {
+      //   setConversation((prev: any) => [...prev, response.message]);
+      // }
+      //
+      // console.log(tag, "response: ", response);
+      // console.log(tag, "content: ", response.message?.content);
     } catch (e) {
       console.error(tag, "Error during onStart:", e);
     }
@@ -118,7 +142,7 @@ export const useInferenceChat = (sdk, apiKey, initialModel = "mistral") => {
 
   useEffect(() => {
     onStart();
-  }, []);
+  }, [sdk]);
 
   const walletFunctions = EXAMPLE_WALLET();
 
@@ -181,10 +205,7 @@ export const useInferenceChat = (sdk, apiKey, initialModel = "mistral") => {
             tools: TOOLS,
           });
 
-          setConversation((prev: any) => [
-            ...prev,
-            finalResponse.message,
-          ]);
+          setConversation((prev: any) => [...prev, finalResponse.message]);
         } else {
           console.log(`Function ${functionName} not found.`);
         }
@@ -196,6 +217,8 @@ export const useInferenceChat = (sdk, apiKey, initialModel = "mistral") => {
 
   return {
     model,
+    isDownloading,
+    percent,
     getModels,
     setModel,
     messages,
