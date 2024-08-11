@@ -235,7 +235,6 @@ export const TOOLS: any = [
   },
 ];
 
-
 export const PROMPTS_SYSTEM: any = [
   {
     role: "system",

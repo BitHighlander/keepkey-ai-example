@@ -45,10 +45,10 @@ const checkAndLaunch = async () => {
   if (!(await checkKeepkeyAvailability(spec))) {
     if (attempt === 3) {
       alert(
-          'KeepKey desktop is required for keepkey-sdk, please go to https://keepkey.com/get-started',
+        "KeepKey desktop is required for keepkey-sdk, please go to https://keepkey.com/get-started"
       );
     } else {
-      window.location.assign('keepkey://launch');
+      window.location.assign("keepkey://launch");
       await new Promise((resolve) => setTimeout(resolve, 30000));
       checkAndLaunch();
     }
@@ -90,54 +90,54 @@ const Header = () => {
   }, []); // once on startup
 
   return (
-      <Flex
-          as="header"
-          width="full"
-          align="center"
-          alignSelf="flex-start"
-          justifyContent="center"
-          gridGap={2}
-      >
-        <Box marginLeft="auto">
-          <Menu>
-            <MenuButton
-                as={Button}
-                rounded="full"
-                variant="link"
-                cursor="pointer"
-                minW={200}
-            >
-              <Avatar size="lg" src={KEEPKEY_ICON}>
-                {keepkeyConnected ? (
-                    <AvatarBadge boxSize="1.25em" bg="green.500" />
-                ) : (
-                    <AvatarBadge boxSize="1.25em" bg="red.500" />
-                )}
-              </Avatar>
-            </MenuButton>
-            <MenuList>
-              <Accordion defaultIndex={[0]} allowMultiple>
-                <AccordionItem>
-                  <h2>
-                    <AccordionButton>
-                      <Box as="span" flex="1" textAlign="left">
-                        <small>features:</small>
-                      </Box>
-                      <AccordionIcon />
-                    </AccordionButton>
-                  </h2>
-                  <AccordionPanel pb={4}>
-                    <small>
-                      version: {features?.major_version}.{features?.minor_version}
-                      .{features?.patch_version}
-                    </small>
-                  </AccordionPanel>
-                </AccordionItem>
-              </Accordion>
-            </MenuList>
-          </Menu>
-        </Box>
-      </Flex>
+    <Flex
+      as="header"
+      width="full"
+      align="center"
+      alignSelf="flex-start"
+      justifyContent="center"
+      gridGap={2}
+    >
+      <Box marginLeft="auto">
+        <Menu>
+          <MenuButton
+            as={Button}
+            rounded="full"
+            variant="link"
+            cursor="pointer"
+            minW={200}
+          >
+            <Avatar size="lg" src={KEEPKEY_ICON}>
+              {keepkeyConnected ? (
+                <AvatarBadge boxSize="1.25em" bg="green.500" />
+              ) : (
+                <AvatarBadge boxSize="1.25em" bg="red.500" />
+              )}
+            </Avatar>
+          </MenuButton>
+          <MenuList>
+            <Accordion defaultIndex={[0]} allowMultiple>
+              <AccordionItem>
+                <h2>
+                  <AccordionButton>
+                    <Box as="span" flex="1" textAlign="left">
+                      <small>features:</small>
+                    </Box>
+                    <AccordionIcon />
+                  </AccordionButton>
+                </h2>
+                <AccordionPanel pb={4}>
+                  <small>
+                    version: {features?.major_version}.{features?.minor_version}
+                    .{features?.patch_version}
+                  </small>
+                </AccordionPanel>
+              </AccordionItem>
+            </Accordion>
+          </MenuList>
+        </Menu>
+      </Box>
+    </Flex>
   );
 };
 
