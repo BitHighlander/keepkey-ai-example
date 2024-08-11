@@ -56,7 +56,7 @@ export const useInferenceChat = (sdk, apiKey, initialModel = "mistral") => {
     }
   };
 
-  const downloadModel = async function (model:string ) {
+  const downloadModel = async function (model: string) {
     console.log(`Downloading model: ${model}...`);
     setIsDownloading(true);
     let currentDigestDone = false;
@@ -109,7 +109,6 @@ export const useInferenceChat = (sdk, apiKey, initialModel = "mistral") => {
         setIsDownloading(false);
       }
 
-      //
       // const version = `${featuresKK.major_version}.${featuresKK.minor_version}.${featuresKK.patch_version}`;
       // const summary = `Tell the user they are connected to their KeepKey. Only return the version: ${version}.`;
       //
@@ -144,7 +143,7 @@ export const useInferenceChat = (sdk, apiKey, initialModel = "mistral") => {
     onStart();
   }, [sdk]);
 
-  const walletFunctions = EXAMPLE_WALLET();
+  const walletFunctions = EXAMPLE_WALLET(sdk);
 
   const availableFunctions: any = {
     ...walletFunctions,
@@ -164,6 +163,7 @@ export const useInferenceChat = (sdk, apiKey, initialModel = "mistral") => {
       ];
       setMessages(newMessages);
 
+      console.log("TOOLS: ", TOOLS);
       const response = await ollama.chat({
         model,
         messages: newMessages,
@@ -178,36 +178,43 @@ export const useInferenceChat = (sdk, apiKey, initialModel = "mistral") => {
       }
 
       const isFunction = result?.tool_calls;
-
+      console.log("isfunction: ", isFunction);
       if (isFunction && isFunction.length > 0) {
-        const functionCall = isFunction[0];
-        const functionName = functionCall?.function?.name;
-
-        if (availableFunctions[functionName]) {
-          const functionResponse = await availableFunctions[functionName](
-            functionCall.function.arguments
-          );
-
-          const toolResponseMessage = {
-            role: "tool",
-            content: `The response for ${functionName} is ${functionResponse}`,
-          };
-
-          newMessages.push(toolResponseMessage);
-          newMessages.push({
-            role: "system",
-            content: `You are a summary agent. The system made tool calls. You are to put together a response that understands the user's intent, interprets the information returned from the tools, then summarizes for the user. If you are more than 80% sure the answer is logical, tell the user this. Otherwise, apologize for failing and return the logic of why you think the response is wrong.`,
-          });
-
-          const finalResponse = await ollama.chat({
-            model,
-            messages: newMessages,
-            tools: TOOLS,
-          });
-
-          setConversation((prev: any) => [...prev, finalResponse.message]);
-        } else {
-          console.log(`Function ${functionName} not found.`);
+        for (let i = 0; i < isFunction.length; i++) {
+          const functionCall = isFunction[i];
+          console.log("functionCall: ", functionCall);
+          const functionName = functionCall?.function?.name;
+          console.log("functionName: ", functionName);
+          if (availableFunctions[functionName]) {
+            const functionResponse = await availableFunctions[functionName](
+              functionCall.function.arguments
+            );
+            const toolResponseMessage = {
+              role: "tool",
+              content: `The response for ${functionName} is ${JSON.stringify(
+                functionResponse
+              )}`,
+            };
+            console.log(tag, "toolResponseMessage: ", toolResponseMessage);
+            newMessages.push(toolResponseMessage);
+          } else {
+            console.error("Function not found: ", functionName);
+          }
+        }
+        newMessages.push({
+          role: "system",
+          content: `You are a summary agent. The system made tool calls. You are to put together a response that understands the user's intent, interprets the information returned from the tools, then summarizes for the user. If you are more than 80% sure the answer is logical, tell the user this. Otherwise, apologize for failing and return the logic of why you think the response is wrong.`,
+        });
+        console.log(tag, "newMessages: ", newMessages);
+        const finalResponse = await ollama.chat({
+          model,
+          messages: newMessages,
+          tools: TOOLS,
+        });
+        console.log(tag, "finalResponse: ", finalResponse);
+        const finalResult = finalResponse?.message || {};
+        if (finalResult?.content) {
+          setConversation((prev: any) => [...prev, finalResult]);
         }
       }
     } catch (e) {

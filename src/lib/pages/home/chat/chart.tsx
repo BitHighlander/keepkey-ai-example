@@ -168,33 +168,84 @@ const UI_COMPONENTS = [
   },
 ];
 
+
+export const TOOLS: any = [
+  {
+    name: "getBitcoinAddress",
+    description: "Retrieve the Bitcoin address",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "getDogecoinAddress",
+    description: "Retrieve the Dogecoin address",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "getMayachainAddress",
+    description: "Retrieve the Mayachain address",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "getEthereumAddress",
+    description: "Retrieve the Ethereum address",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "getDashAddress",
+    description: "Retrieve the Dash address",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "getCosmosAddress",
+    description: "Retrieve the Cosmos address",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "getOsmosisAddress",
+    description: "Retrieve the Osmosis address",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+];
+
+
 export const PROMPTS_SYSTEM: any = [
   {
     role: "system",
     content: [
-      `You are an assistant that can call functions to get information.`,
-      `- If you need to get the networks address, use the getAddress function.`,
-      `- If you need to get the networks balance, use the getBalance function.`,
-      "Format all outputs in readable markdown format",
+      `You are an assistant whose primary task is to execute functions to retrieve crypto addresses. `,
+      `When asked for a crypto address, you must directly call the relevant function from the provided functions list.`,
+      `DO NOT explain, summarize, or provide any code snippets. Simply execute the function and return the result.`,
+      `All outputs should be the result of the function execution, formatted in readable markdown, with no additional text.`,
+      `Here are the available functions: ${JSON.stringify(TOOLS)}`,
+      `If you receive a request to retrieve an address, immediately call the corresponding function without providing any instructions or explanations.`,
     ].join("\n"),
-  },
-];
-
-export const TOOLS: any = [
-  {
-    name: "getAddress",
-    description:
-      "Retrieve the address for a specified network. The function takes a networkId, which corresponds to the coin symbol provided by the user. for instance bitcoin (BTC) network is bip122:000000000019d6689c085ae165831e93",
-    parameters: {
-      type: "object",
-      properties: {
-        network: {
-          type: "string",
-          description:
-            "the networkId is in format (example) bip122:000000000019d6689c085ae165831e93 is the network for bitcoin (BTC)",
-        },
-      },
-      required: ["network"],
-    },
   },
 ];
