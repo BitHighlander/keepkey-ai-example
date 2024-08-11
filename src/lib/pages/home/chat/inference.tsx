@@ -24,7 +24,7 @@ export const useInferenceChat = (sdk, apiKey, initialModel = "mistral") => {
   const ollama = useMemo(() => {
     console.log("API Key:", apiKey); // Debugging statement
     return new Ollama({
-      host: "http://localhost:1646",
+      host: "http://localhost:1646/ollama",
       apiKey,
     });
   }, [apiKey]);
