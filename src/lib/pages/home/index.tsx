@@ -38,6 +38,8 @@ const Home = () => {
       console.log("features: ", featuresKK);
       if (featuresKK) {
         setKeepKeyConnected(true);
+      } else {
+        setTimeout(onStart, 2000);
       }
 
       console.log(sdk);
